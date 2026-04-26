@@ -33,8 +33,6 @@ export default function PendientesView({ invoices, onEditInvoice, onUpdateInvoic
     const unsubAppointments = onSnapshot(qAppointments, (snapshot) => {
       const fetchedAppointments = snapshot.docs.map(doc => ({ ...doc.data() } as Appointment));
       setAppointments(fetchedAppointments);
-    }, (error) => {
-      console.error('PendientesView: Firestore appointments error:', error);
     });
 
     return () => unsubAppointments();
@@ -62,9 +60,7 @@ export default function PendientesView({ invoices, onEditInvoice, onUpdateInvoic
     return invoices
       .filter(inv => inv.status !== 'PAGADO' && inv.type === 'FACTURA')
       .map(inv => {
-        const rawDate = inv.deliveryDate ? new Date(inv.deliveryDate) : new Date();
-        const deliveryDateObj = isNaN(rawDate.getTime()) ? new Date() : rawDate;
-        const deliveryTimer = deliveryDateObj.getTime();
+        const deliveryTimer = new Date(inv.deliveryDate).getTime();
         const now = new Date().getTime();
         const isOverdue = deliveryTimer < now;
         const diffHours = Math.abs((deliveryTimer - now) / (1000 * 60 * 60));
@@ -77,7 +73,7 @@ export default function PendientesView({ invoices, onEditInvoice, onUpdateInvoic
           timeString = `${Math.floor(diffHours)} hora(s)`;
         }
 
-        return { ...inv, isOverdue, timeString, deliveryTimer, diffDays, diffHours, deliveryDateObj };
+        return { ...inv, isOverdue, timeString, deliveryTimer, diffDays, diffHours, deliveryDateObj: new Date(inv.deliveryDate) };
       })
       .sort((a, b) => a.deliveryTimer - b.deliveryTimer);
   }, [invoices]);
@@ -124,7 +120,7 @@ export default function PendientesView({ invoices, onEditInvoice, onUpdateInvoic
   };
 
   const saveAppointmentToFirebase = async (appointment: Appointment) => {
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       try {
         await setDoc(doc(db, `users/${auth.currentUser.uid}/appointments`, appointment.id), appointment);
       } catch (e) {
@@ -306,11 +302,11 @@ export default function PendientesView({ invoices, onEditInvoice, onUpdateInvoic
 
                     <div className="bg-black/5 dark:bg-zinc-950/50 p-4 rounded-2xl mb-4 flex-1">
                        <div className="flex justify-between items-center mb-2">
-                         <p className="text-[10px] font-bold text-zinc-500 flex items-center gap-1.5"><Calendar size={12} /> {item.deliveryDateObj instanceof Date && !isNaN(item.deliveryDateObj.getTime()) ? format(item.deliveryDateObj, "dd/MM/yyyy h:mm a", { locale: es }) : '—'}</p>
-                         <p className="text-xs font-black">${(Number(item.remainingAmount) || 0).toLocaleString()}</p>
+                         <p className="text-[10px] font-bold text-zinc-500 flex items-center gap-1.5"><Calendar size={12} /> {format(item.deliveryDateObj, "dd/MM/yyyy h:mm a", { locale: es })}</p>
+                         <p className="text-xs font-black">${item.remainingAmount.toLocaleString()}</p>
                        </div>
                        <div className="flex gap-2 flex-wrap mt-3">
-                         {(item.items || []).slice(0, 2).map((prod, i) => (
+                         {item.items.slice(0, 2).map((prod, i) => (
                            <span key={i} className="text-[9px] font-bold px-2 py-1 bg-white/10 dark:bg-white/5 rounded-lg truncate max-w-[120px]">
                              {prod.quantity}x {prod.description}
                            </span>

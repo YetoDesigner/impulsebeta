@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Wallet, Plus, Trash2, Building2, Users, Wrench, Zap, MoreHorizontal, TrendingDown, 
-  Car, Coffee, Shield, ShoppingCart, Smartphone, PenTool, Briefcase, Activity, Tag, Bookmark,
-  Sparkles, Camera, Loader2
+  Car, Coffee, Shield, ShoppingCart, Smartphone, PenTool, Briefcase, Activity, Tag, Bookmark 
 } from 'lucide-react';
 import { Expense } from '../types';
 import { cn } from '../lib/utils';
@@ -51,9 +50,6 @@ export default function GastosView() {
     description: '',
     amount: 0,
     category: 'GASTO_OPERATIVO',
-    tax: 0,
-    products: '',
-    vendor: ''
   });
 
   const [newCategory, setNewCategory] = useState({
@@ -74,15 +70,11 @@ export default function GastosView() {
     const qExp = query(collection(db, `users/${auth.currentUser.uid}/expenses`));
     const unsubExp = onSnapshot(qExp, (snapshot) => {
       setExpenses(snapshot.docs.map(doc => ({ ...doc.data() } as Expense)));
-    }, (error) => {
-      console.error('GastosView: Firestore expenses error:', error);
     });
 
     const qCat = query(collection(db, `users/${auth.currentUser.uid}/categories`));
     const unsubCat = onSnapshot(qCat, (snapshot) => {
       setCustomCategories(snapshot.docs.map(doc => ({ ...doc.data() } as CustomCategory)));
-    }, (error) => {
-      console.error('GastosView: Firestore categories error:', error);
     });
 
     return () => { unsubExp(); unsubCat(); };
@@ -99,16 +91,13 @@ export default function GastosView() {
 
     const expense: Expense = {
       id: Date.now().toString(),
-      date: newExpense.date || new Date().toISOString(),
+      date: new Date().toISOString(),
       description: newExpense.description,
       amount: Number(newExpense.amount),
       category: newExpense.category as string,
-      tax: Number(newExpense.tax) || 0,
-      products: newExpense.products || '',
-      vendor: newExpense.vendor || '',
     };
 
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       try {
         await setDoc(doc(db, `users/${auth.currentUser.uid}/expenses`, expense.id), {
           ...expense,
@@ -124,7 +113,7 @@ export default function GastosView() {
       saveExpToLocal(updated);
     }
     
-    setNewExpense({ description: '', amount: 0, category: 'GASTO_OPERATIVO', tax: 0, products: '', vendor: '' });
+    setNewExpense({ description: '', amount: 0, category: 'GASTO_OPERATIVO' });
     setIsFormOpen(false);
   };
 
@@ -141,7 +130,7 @@ export default function GastosView() {
       bg: randomColor.bg,
     };
 
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       try {
         await setDoc(doc(db, `users/${auth.currentUser.uid}/categories`, cat.id), {
           ...cat,
@@ -164,7 +153,7 @@ export default function GastosView() {
   };
 
   const handleDelete = async (id: string) => {
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       try {
         await deleteDoc(doc(db, `users/${auth.currentUser.uid}/expenses`, id));
       } catch (e: any) {
@@ -196,7 +185,7 @@ export default function GastosView() {
         </div>
         <button 
           onClick={() => setIsFormOpen(true)}
-          className="bg-white text-black px-6 py-3 rounded-2xl text-xs font-black flex items-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg shadow-white/5"
+          className="bg-white text-black px-6 py-3 rounded-2xl text-xs font-black flex items-center gap-2 hover:bg-zinc-200 transition-colors"
         >
           <Plus size={16} />
           Nuevo Registro
@@ -239,11 +228,7 @@ export default function GastosView() {
           </div>
         ) : (
           <div className="divide-y divide-zinc-800">
-            {expenses.sort((a,b) => {
-              const dateA = a.date ? new Date(a.date).getTime() : 0;
-              const dateB = b.date ? new Date(b.date).getTime() : 0;
-              return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
-            }).map(exp => {
+            {expenses.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => {
               const catData = ALL_CATEGORIES.find(c => c.id === exp.category) || ALL_CATEGORIES[ALL_CATEGORIES.length - 1];
               const Icon = ICON_MAP[catData.iconName] || Tag;
               return (
@@ -297,22 +282,6 @@ export default function GastosView() {
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Monto ($)</label>
                   <input type="number" required min="0" value={newExpense.amount || ''} onChange={e => setNewExpense({...newExpense, amount: Number(e.target.value)})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold focus:border-white transition-colors outline-none" placeholder="0" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Impuestos ($)</label>
-                    <input type="number" min="0" value={newExpense.tax || ''} onChange={e => setNewExpense({...newExpense, tax: Number(e.target.value)})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold focus:border-white transition-colors outline-none" placeholder="0" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Proveedor</label>
-                    <input type="text" value={newExpense.vendor || ''} onChange={e => setNewExpense({...newExpense, vendor: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold focus:border-white transition-colors outline-none" placeholder="Opcional" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Productos / Detalle</label>
-                  <textarea value={newExpense.products || ''} onChange={e => setNewExpense({...newExpense, products: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm font-bold focus:border-white transition-colors outline-none min-h-[80px] resize-none" placeholder="Lista de productos..." />
                 </div>
 
                 <div>

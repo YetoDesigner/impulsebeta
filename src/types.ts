@@ -12,12 +12,7 @@ export interface Invoice {
   date: string;
   companyName: string;
   nit: string;
-  companyPhone?: string;
-  companyAddress?: string;
   clientName: string;
-  clientPhone?: string;
-  clientNit?: string;
-  clientAddress?: string;
   items: InvoiceItem[];
   deliveryDate: string;
   status: 'ABONO' | 'PAGADO' | 'PENDIENTE';
@@ -30,7 +25,6 @@ export interface Invoice {
   gradientTo: string;
   textColor: string;
   accentColor: string;
-  designType?: 'MODERN' | 'TICKET';
   // Delay Tracking
   delayReason?: 'INTERNO' | 'CLIENTE' | 'PROVEEDOR' | null;
 }
@@ -41,9 +35,6 @@ export interface Expense {
   description: string;
   amount: number;
   category: string;
-  tax?: number;
-  products?: string;
-  vendor?: string;
 }
 
 export interface Appointment {

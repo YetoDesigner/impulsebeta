@@ -17,7 +17,7 @@ interface ClientStats {
   totalPending: number;
   invoiceCount: number;
   lastPurchase: string;
-  reliability: 'Excelente' | 'Bueno' | 'Regular' | 'Riesgoso' | 'Cotizador';
+  reliability: 'Excelente' | 'Bueno' | 'Regular' | 'Riesgoso';
   invoices: Invoice[];
 }
 
@@ -45,40 +45,25 @@ export default function ClientsView({ invoices, onEditInvoice, onDeleteInvoice }
       }
 
       const stats = groups[name];
+      const total = Number(inv.total) || 0;
+      const pending = Number(inv.remainingAmount) || 0;
+
+      stats.totalBilled += total;
+      stats.totalPending += pending;
+      stats.invoiceCount += 1;
       stats.invoices.push(inv);
-
-      // Solo sumar totales si es una FACTURA (Cuenta de cobro)
-      if (inv.type !== 'COTIZACIÓN') {
-        const total = Number(inv.total) || 0;
-        const pending = Number(inv.remainingAmount) || 0;
-
-        stats.totalBilled += total;
-        stats.totalPending += pending;
-        stats.invoiceCount += 1;
-        
-        if (new Date(inv.date) > new Date(stats.lastPurchase)) {
-          stats.lastPurchase = inv.date;
-        }
-      } else {
-        // Para cotizaciones, si queremos que la fecha cuente como interacción:
-        if (new Date(inv.date) > new Date(stats.lastPurchase)) {
-          stats.lastPurchase = inv.date;
-        }
+      
+      if (new Date(inv.date) > new Date(stats.lastPurchase)) {
+        stats.lastPurchase = inv.date;
       }
     });
 
     // Calculate reliability
     const now = new Date();
     Object.values(groups).forEach(stats => {
-      // Si el cliente solo tiene cotizaciones (totalBilled === 0) no calcular deuda
-      if (stats.totalBilled === 0) {
-        stats.reliability = 'Cotizador';
-        return;
-      }
-
       const pendingRatio = stats.totalPending / stats.totalBilled;
       const hasOverdue = stats.invoices.some(inv => 
-        inv.type !== 'COTIZACIÓN' && inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < now
+        inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < now
       );
 
       if (stats.totalPending === 0) {
@@ -150,7 +135,6 @@ export default function ClientsView({ invoices, onEditInvoice, onDeleteInvoice }
                   client.reliability === 'Excelente' ? "bg-green-500/20 text-green-500" :
                   client.reliability === 'Bueno' ? "bg-blue-500/20 text-blue-500" :
                   client.reliability === 'Regular' ? "bg-orange-500/20 text-orange-500" :
-                  client.reliability === 'Cotizador' ? "bg-purple-500/20 text-purple-400" :
                   "bg-red-500/20 text-red-500"
                 )}>
                   {client.reliability}
@@ -221,7 +205,6 @@ export default function ClientsView({ invoices, onEditInvoice, onDeleteInvoice }
                         activeClient.reliability === 'Excelente' ? "bg-green-500/20 text-green-500" :
                         activeClient.reliability === 'Bueno' ? "bg-blue-500/20 text-blue-500" :
                         activeClient.reliability === 'Regular' ? "bg-orange-500/20 text-orange-500" :
-                        activeClient.reliability === 'Cotizador' ? "bg-purple-500/20 text-purple-400" :
                         "bg-red-500/20 text-red-500"
                       )}>
                         {activeClient.reliability}
@@ -261,13 +244,11 @@ export default function ClientsView({ invoices, onEditInvoice, onDeleteInvoice }
                     </div>
                     <p className={cn(
                       "text-2xl font-black",
-                      activeClient.reliability === 'Cotizador' ? "text-purple-400" :
-                      activeClient.invoices.some(inv => inv.type !== 'COTIZACIÓN' && inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < new Date()) 
+                      activeClient.invoices.some(inv => inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < new Date()) 
                         ? "text-orange-500" 
                         : "text-green-500"
                     )}>
-                      {activeClient.reliability === 'Cotizador' ? 'N/A' :
-                       activeClient.invoices.some(inv => inv.type !== 'COTIZACIÓN' && inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < new Date()) 
+                      {activeClient.invoices.some(inv => inv.status !== 'PAGADO' && new Date(inv.deliveryDate) < new Date()) 
                         ? 'Con Retrasos' 
                         : 'Puntual'}
                     </p>
@@ -279,11 +260,9 @@ export default function ClientsView({ invoices, onEditInvoice, onDeleteInvoice }
                     </div>
                     <p className={cn(
                       "text-2xl font-black",
-                      activeClient.reliability === 'Cotizador' ? "text-purple-400" :
                       activeClient.reliability === 'Excelente' ? "text-green-500" : "text-zinc-100"
                     )}>
-                      {activeClient.reliability === 'Cotizador' ? 'Cotizador' :
-                       activeClient.reliability === 'Excelente' ? 'Al Día' : 'Con Pendientes'}
+                      {activeClient.reliability === 'Excelente' ? 'Al Día' : 'Con Pendientes'}
                     </p>
                   </div>
                 </div>

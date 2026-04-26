@@ -40,8 +40,6 @@ export default function TasksView() {
     const unsubTasks = onSnapshot(qTasks, (snapshot) => {
       const fetchedTasks = snapshot.docs.map(doc => ({ ...doc.data() } as Task));
       setTasks(fetchedTasks);
-    }, (error) => {
-      console.error('TasksView: Firestore tasks error:', error);
     });
 
     const docSettings = doc(db, `users/${auth.currentUser.uid}/settings/tasksConfig`);
@@ -60,7 +58,7 @@ export default function TasksView() {
 
   useEffect(() => {
     localStorage.setItem('impulse_task_columns', JSON.stringify(columns));
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       setDoc(doc(db, `users/${auth.currentUser.uid}/settings/tasksConfig`), { columns }, { merge: true });
     }
   }, [columns]);
@@ -78,7 +76,7 @@ export default function TasksView() {
     setTasks(prev => [...prev, newTask]);
     setNewTaskText('');
 
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       await setDoc(doc(db, `users/${auth.currentUser.uid}/tasks`, newTask.id), newTask);
     }
   };
@@ -90,7 +88,7 @@ export default function TasksView() {
     const newCompletedState = !task.completed;
     setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: newCompletedState } : t));
     
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       await setDoc(doc(db, `users/${auth.currentUser.uid}/tasks`, id), { completed: newCompletedState }, { merge: true });
     }
   };
@@ -144,7 +142,7 @@ export default function TasksView() {
 
     setTasks(updatedTasks);
 
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
        const batch = writeBatch(db);
        updatedTasks.forEach(t => {
           if (task.status === newStatus && t.id !== taskId && newIndex === undefined) return; 
@@ -160,14 +158,14 @@ export default function TasksView() {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, text: editTaskText.trim() } : t));
     setEditingTaskId(null);
 
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       await setDoc(doc(db, `users/${auth.currentUser.uid}/tasks`, id), { text: editTaskText.trim() }, { merge: true });
     }
   };
 
   const deleteTask = async (id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
-    if (auth.currentUser && auth.currentUser.uid !== 'local-user') {
+    if (auth.currentUser) {
       await deleteDoc(doc(db, `users/${auth.currentUser.uid}/tasks`, id));
     }
   };
@@ -402,22 +400,18 @@ export default function TasksView() {
                               <GripVertical size={14} />
                             </div>
                             <button 
-                              onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+                              onClick={() => toggleTask(task.id)}
                               className={cn(
                                 "w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all border-2",
                                 task.completed 
-                                  ? draggedTaskId === task.id ? "bg-white border-white text-black dark:bg-black dark:border-black dark:text-white" : "bg-black border-black text-white dark:bg-white dark:border-white dark:text-black" 
+                                  ? draggedTaskId === task.id ? "bg-white border-white text-black dark:bg-black dark:border-black dark:text-white" : "bg-white dark:bg-zinc-700 border-black dark:border-white text-black dark:text-white" 
                                   : draggedTaskId === task.id ? "bg-transparent border-white text-transparent" : "bg-transparent border-zinc-300 dark:border-zinc-600 text-transparent hover:border-black dark:hover:border-white"
                               )}
                             >
-                              <Check size={10} strokeWidth={3} className={task.completed ? "opacity-100 text-white dark:text-black" : "opacity-0"} />
+                              <Check size={10} strokeWidth={3} className={task.completed ? "opacity-100" : "opacity-0"} />
                             </button>
                           </div>
-                          <p 
-                            className="flex-1 text-[11px] tracking-wide leading-relaxed pointer-events-auto cursor-pointer"
-                            style={{ fontFamily: '"Arial Black", "Arial Bold", sans-serif', fontWeight: 900 }}
-                            onClick={() => toggleTask(task.id)}
-                          >
+                          <p className="flex-1 text-[11px] tracking-wide leading-relaxed" style={{ fontFamily: '"Arial Black", "Arial Bold", sans-serif', fontWeight: 900 }}>
                             {task.completed ? <span className={cn("line-through", draggedTaskId === task.id ? "text-white/70 dark:text-black/70" : "text-zinc-400 dark:text-zinc-500")}>{task.text}</span> : task.text}
                           </p>
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
@@ -565,30 +559,28 @@ export default function TasksView() {
                           <button onClick={() => saveEditTask(task.id)} className="p-3 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 text-black dark:text-white rounded-xl shadow-sm"><Check size={16}/></button>
                         </div>
                     ) : (
-                      <div className="flex items-start gap-4">
-                        <div className="flex items-center gap-2 mt-0.5 z-10">
-                            <div className={cn("opacity-20 shrink-0", draggedTaskId === task.id ? "text-white dark:text-black" : "text-black dark:text-white")}>
-                              <GripVertical size={16} />
-                            </div>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
-                              className={cn(
-                                "w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all border-2 cursor-pointer z-20",
-                                task.completed 
-                                  ? draggedTaskId === task.id ? "bg-white border-white text-black dark:bg-black dark:border-black dark:text-white" : "bg-black border-black text-white dark:bg-white dark:border-white dark:text-black" 
-                                  : draggedTaskId === task.id ? "bg-transparent border-white text-transparent" : "bg-transparent border-zinc-300 dark:border-zinc-600 text-transparent hover:border-black dark:hover:border-white"
-                              )}
-                            >
-                              <Check size={14} strokeWidth={3} className={task.completed ? "opacity-100 text-white dark:text-black" : "opacity-0"} />
-                            </button>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className={cn("opacity-20 shrink-0", draggedTaskId === task.id ? "text-white dark:text-black" : "text-black dark:text-white")}>
+                            <GripVertical size={16} />
                           </div>
-                          <p className={cn(
-                            "flex-1 text-sm font-bold leading-relaxed transition-all cursor-pointer",
-                            task.completed ? "line-through text-zinc-400 dark:text-zinc-500" : ""
-                          )}
-                          onClick={() => toggleTask(task.id)}
-                          >{task.text}</p>
-                        <div className="flex gap-1.5 shrink-0 z-10">
+                          <button 
+                            onClick={() => toggleTask(task.id)}
+                            className={cn(
+                              "w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all border-2",
+                              task.completed 
+                                ? draggedTaskId === task.id ? "bg-white border-white text-black dark:bg-black dark:border-black dark:text-white" : "bg-white dark:bg-zinc-700 border-black dark:border-white text-black dark:text-white" 
+                                : draggedTaskId === task.id ? "bg-transparent border-white text-transparent" : "bg-transparent border-zinc-300 dark:border-zinc-600 text-transparent hover:border-black dark:hover:border-white"
+                            )}
+                          >
+                            <Check size={14} strokeWidth={3} className={task.completed ? "opacity-100" : "opacity-0"} />
+                          </button>
+                        </div>
+                        <p className={cn(
+                          "flex-1 text-sm font-bold leading-relaxed transition-all",
+                          task.completed ? "line-through text-zinc-400 dark:text-zinc-500" : ""
+                        )}>{task.text}</p>
+                        <div className="flex gap-1.5 shrink-0">
                            <button onClick={() => { setEditingTaskId(task.id); setEditTaskText(task.text); }} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400"><Edit2 size={12}/></button>
                            <button onClick={() => deleteTask(task.id)} className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-500"><Trash2 size={12}/></button>
                         </div>

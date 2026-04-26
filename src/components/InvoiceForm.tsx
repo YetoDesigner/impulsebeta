@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Trash2, Edit2, Palette, Save, Upload, Image as ImageIcon, Layout, Receipt } from 'lucide-react';
+import { X, Plus, Trash2, Edit2, Palette, Save, Upload, Image as ImageIcon } from 'lucide-react';
 import { Invoice, InvoiceItem } from '../types';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -176,7 +176,7 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm"
         >
           <motion.div
             initial={{ y: '100%' }}
@@ -199,7 +199,7 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
                         : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:border-zinc-600"
                     )}
                   >
-                    {t === 'FACTURA' ? 'CUENTA DE COBRO' : t}
+                    {t}
                   </button>
                 ))}
               </div>
@@ -209,49 +209,66 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Logo & Company Section */}
+              <div className="flex flex-col gap-6 items-center md:items-start">
+                <div className="space-y-2 flex-shrink-0 flex flex-col items-center">
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Logo Factura</label>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-20 h-20 rounded-2xl bg-zinc-800 border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center cursor-pointer hover:border-white/20 transition-all overflow-hidden"
+                  >
+                    {formData.logoUrl ? (
+                      <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Upload size={16} className="opacity-30 mb-1" />
+                        <span className="text-[7px] font-black opacity-30">SUBIR</span>
+                      </>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleLogoUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                </div>
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Empresa</label>
+                    <input
+                      required
+                      type="text"
+                      value={formData.companyName}
+                      onChange={e => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                      className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">NIT</label>
+                    <input
+                      required
+                      type="text"
+                      value={formData.nit}
+                      onChange={e => setFormData(prev => ({ ...prev, nit: e.target.value }))}
+                      className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Client Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Cliente</label>
-                  <input
-                    required
-                    type="text"
-                    value={formData.clientName}
-                    onChange={e => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                    className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
-                    placeholder="Ej: Pedro Quintero"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">WhatsApp del Cliente</label>
-                  <input
-                    type="tel"
-                    value={formData.clientPhone || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
-                    className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
-                    placeholder="Ej: +57 300 000 0000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">NIT / Documento</label>
-                  <input
-                    type="text"
-                    value={formData.clientNit || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, clientNit: e.target.value }))}
-                    className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
-                    placeholder="Ej: 12345678"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Dirección del Cliente</label>
-                  <input
-                    type="text"
-                    value={formData.clientAddress || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, clientAddress: e.target.value }))}
-                    className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
-                    placeholder="Ej: Calle 123 #45-67"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Cliente</label>
+                <input
+                  required
+                  type="text"
+                  value={formData.clientName}
+                  onChange={e => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+                  className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
+                  placeholder="Ej: Pedro Quintero"
+                />
               </div>
 
               {/* Items Section */}
@@ -364,7 +381,7 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
                       <p className="text-xs font-black text-green-500">${(calculateTotal() - calculateTotalCost()).toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[7px] font-black opacity-30 uppercase tracking-widest">Total</p>
+                      <p className="text-[7px] font-black opacity-30 uppercase tracking-widest">Total Factura</p>
                       <p className="text-sm font-black text-white">${calculateTotal().toLocaleString()}</p>
                     </div>
                   </div>
@@ -386,36 +403,34 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
                     className="w-full bg-zinc-800 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-white transition-all outline-none font-bold [color-scheme:dark]"
                   />
                 </div>
-                {formData.type !== 'COTIZACIÓN' && (
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Estado</label>
-                    <select
-                      value={formData.status}
-                      onChange={e => {
-                        const newStatus = e.target.value as any;
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          status: newStatus,
-                          paidAmount: newStatus === 'PENDIENTE' || newStatus === 'PAGADO' ? 0 : prev.paidAmount
-                        }));
-                      }}
-                      className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold appearance-none"
-                    >
-                      <option value="ABONO">ABONO</option>
-                      <option value="PAGADO">PAGADO</option>
-                      <option value="PENDIENTE">PENDIENTE</option>
-                    </select>
-                  </div>
-                )}
-                {formData.type !== 'COTIZACIÓN' && formData.status === 'ABONO' && (
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Estado</label>
+                  <select
+                    value={formData.status}
+                    onChange={e => {
+                      const newStatus = e.target.value as any;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        status: newStatus,
+                        // If switching to PAGADO, we might want to clear paidAmount or handle it in submit
+                      }));
+                    }}
+                    className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold appearance-none"
+                  >
+                    <option value="ABONO">ABONO</option>
+                    <option value="PAGADO">PAGADO</option>
+                    <option value="PENDIENTE">PENDIENTE</option>
+                  </select>
+                </div>
+                {formData.status !== 'PAGADO' && (
                   <div className="space-y-2">
                     <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">
-                      Abono (Obligatorio)
+                      {formData.status === 'ABONO' ? 'Abono (Obligatorio)' : 'Abono'}
                     </label>
                     <input
-                      required
+                      required={formData.status === 'ABONO'}
                       type="number"
-                      min={1}
+                      min={formData.status === 'ABONO' ? 1 : 0}
                       value={formData.paidAmount}
                       onChange={e => setFormData(prev => ({ ...prev, paidAmount: parseInt(e.target.value) || 0 }))}
                       className="w-full bg-zinc-800 border-none rounded-xl p-3 text-xs focus:ring-2 focus:ring-white transition-all outline-none font-bold"
@@ -425,10 +440,10 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
               </div>
 
               {/* Customization Section */}
-              <div className="space-y-4 p-4 bg-zinc-800/50 rounded-2xl border border-zinc-800">
-                <div className="flex items-center gap-2">
+              <div className="space-y-3 p-4 bg-zinc-800/50 rounded-2xl border border-zinc-800">
+                <div className="flex items-center gap-2 mb-1">
                   <Palette size={12} className="opacity-40" />
-                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Diseño y Estilo</label>
+                  <label className="text-[9px] font-black opacity-40 uppercase tracking-widest">Diseño</label>
                 </div>
                 
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -490,7 +505,7 @@ export default function InvoiceForm({ isOpen, onClose, onSave, initialInvoice }:
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-center pt-2 pb-24 md:pb-2">
+              <div className="flex justify-center pt-2">
                 <button
                   type="submit"
                   className="w-full max-w-xs bg-white text-black font-black py-3 rounded-2xl text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all shadow-xl shadow-white/5"
