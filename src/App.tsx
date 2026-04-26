@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Search, Filter, Settings, LogOut, ChevronRight, User as UserIcon, LayoutGrid, List as ListIcon, TrendingUp, Mail, Moon, Sun, Clock, Wallet, Calendar, CheckCircle2, MessageSquare, Scan, Loader2, Sparkles, Receipt, Building2, Upload, Save, X, Menu } from 'lucide-react';
+import { Plus, Search, Filter, Settings, LogOut, ChevronRight, User as UserIcon, LayoutGrid, List as ListIcon, TrendingUp, Mail, Moon, Sun, Clock, Wallet, Calendar, CheckCircle2, MessageSquare, Scan, Loader2, Sparkles, Receipt, Building2, Upload, Save, X, ArrowLeft } from 'lucide-react';
 import { Invoice, Expense, AppView } from './types';
 import InvoiceCard, { InvoiceCardRef } from './components/InvoiceCard';
 import InvoiceForm from './components/InvoiceForm';
@@ -254,6 +254,23 @@ export default function App() {
       return false;
     }
     return true;
+  };
+
+  const handleNavigateFromChat = (target: string) => {
+    if (target === 'new_invoice') {
+      if (checkInvoiceLimit()) {
+        setEditingInvoice(undefined);
+        setIsFormOpen(true);
+      }
+    } else if (target === 'scan') {
+      if (canUseScan()) {
+        scanInputRef.current?.click();
+      }
+    } else if (target === 'settings') {
+      setShowSettings(true);
+    } else {
+      setActiveTab(target as AppView);
+    }
   };
 
   // Global Scanner Handler
@@ -967,35 +984,26 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 md:ml-56 p-5 md:p-8 pb-32 md:pb-10">
-        {/* Header Mobile */}
-        <header className="md:hidden flex justify-between items-center mb-6 relative z-50">
+        {/* Header Mobile — oculto en chat, botón de regreso en otras vistas */}
+        <header className={cn("md:hidden flex justify-between items-center mb-6 relative z-50", activeTab === 'chat' && "hidden")}>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
+            <button
+              onClick={() => setActiveTab('chat')}
               className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-white active:scale-95 transition-transform"
             >
-              <Menu size={20} />
+              <ArrowLeft size={20} />
             </button>
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden hidden sm:flex">
-              <img src={APP_LOGO_URL} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </div>
             <div>
-              <h1 className="text-lg font-black tracking-tighter">
-                Impulse <span className="text-orange-500">Ultra</span>
+              <h1 className="text-sm font-black tracking-tighter">
+                {({ dashboard: 'Panel', clients: 'Clientes', pendientes: 'Pendientes', gastos: 'Gastos', tareas: 'Tareas', stats: 'Estadísticas' } as Record<string, string>)[activeTab] || 'Panel'}
               </h1>
-              {user && !isPremium && !paidPlan && (
-                <div className="flex flex-col -mt-0.5">
-                  <p className="text-[7px] font-black text-orange-500 uppercase tracking-[0.2em]">
-                    {freeInvoicesRemaining} docs · {freeChatRemaining} chats · {freeScanRemaining} scans
-                  </p>
-                </div>
-              )}
+              <p className="text-[9px] font-black text-orange-500 uppercase tracking-[0.2em]">Impulse Ultra</p>
             </div>
           </div>
-          
+
           {user && (
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowLogoutConfirm(!showLogoutConfirm)}
                 className="w-10 h-10 rounded-full border-2 border-zinc-800 flex items-center justify-center bg-zinc-900 overflow-hidden active:scale-95 transition-transform"
               >
@@ -1005,12 +1013,12 @@ export default function App() {
                   <Mail size={16} className="text-zinc-400" />
                 )}
               </button>
-              
+
               <AnimatePresence>
                 {showLogoutConfirm && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setShowLogoutConfirm(false)}
                     />
                     <motion.div
@@ -1253,16 +1261,17 @@ export default function App() {
         ) : activeTab === 'tareas' ? (
           <TasksView />
         ) : activeTab === 'chat' || activeTab === 'stats' ? (
-          <ChatView 
-            stats={stats} 
-            invoices={invoices} 
-            expenses={expenses} 
+          <ChatView
+            stats={stats}
+            invoices={invoices}
+            expenses={expenses}
             onChatSend={incrementChatUsage}
             chatRemaining={freeChatRemaining}
             chatLimitReached={isChatLimitReached}
             onLimitReached={() => setShowPremiumModal(true)}
             onUpdateInvoice={handleUpdateInvoice}
             onShareInvoice={(id) => setSharingInvoiceId(id)}
+            onNavigate={handleNavigateFromChat}
           />
         ) : null}
       </main>

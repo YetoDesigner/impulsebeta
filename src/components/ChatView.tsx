@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, User, Sparkles, Trash2, Loader2, TrendingUp, Users } from 'lucide-react';
+import { Send, User, Sparkles, Trash2, Loader2, TrendingUp, Users, MoreVertical, LayoutGrid, Clock, Wallet, CheckCircle2, Scan, Plus, Settings, X } from 'lucide-react';
 import { askImpulseAI } from '../lib/openai';
 import { cn } from '../lib/utils';
 import { auth } from '../firebase';
@@ -25,6 +25,7 @@ interface ChatViewProps {
   onLimitReached?: () => void;
   onUpdateInvoice?: (id: string, updates: any) => void;
   onShareInvoice?: (id: string) => void;
+  onNavigate?: (target: string) => void;
 }
 
 function TypewriterText({ text, onComplete }: { text: string, onComplete?: () => void }) {
@@ -52,11 +53,12 @@ function TypewriterText({ text, onComplete }: { text: string, onComplete?: () =>
   );
 }
 
-export default function ChatView({ stats, invoices, expenses, onChatSend, chatRemaining, chatLimitReached, onLimitReached, onUpdateInvoice, onShareInvoice }: ChatViewProps) {
+export default function ChatView({ stats, invoices, expenses, onChatSend, chatRemaining, chatLimitReached, onLimitReached, onUpdateInvoice, onShareInvoice, onNavigate }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showClients, setShowClients] = useState(false);
+  const [showToolMenu, setShowToolMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const uniqueClients = useMemo(() => {
@@ -161,7 +163,8 @@ export default function ChatView({ stats, invoices, expenses, onChatSend, chatRe
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-100px)] -mx-4 md:mx-0 px-4 md:px-0">
+    <>
+    <div className="flex flex-col h-[calc(100vh-76px)] md:h-[calc(100vh-100px)] -mx-4 md:mx-0 px-4 md:px-0">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-2 md:px-0">
         <div>
@@ -171,12 +174,12 @@ export default function ChatView({ stats, invoices, expenses, onChatSend, chatRe
             Tu asistente financiero inteligente personalizado.
           </p>
         </div>
-        <button 
-          onClick={clearChat}
-          className="p-3 bg-zinc-900 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-2xl border border-zinc-800 transition-all"
-          title="Borrar historial"
+        <button
+          onClick={() => setShowToolMenu(true)}
+          className="p-3 bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-2xl border border-zinc-800 transition-all"
+          title="Herramientas"
         >
-          <Trash2 size={18} />
+          <MoreVertical size={18} />
         </button>
       </div>
 
@@ -407,8 +410,8 @@ export default function ChatView({ stats, invoices, expenses, onChatSend, chatRe
             disabled={(!input.trim() && !chatLimitReached) || isLoading}
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center transition-all",
-              input.trim() && !isLoading 
-                ? "bg-white text-black shadow-lg shadow-white/10" 
+              input.trim() && !isLoading
+                ? "bg-white text-black shadow-lg shadow-white/10"
                 : "bg-zinc-800 text-zinc-600"
             )}
           >
@@ -417,5 +420,72 @@ export default function ChatView({ stats, invoices, expenses, onChatSend, chatRe
         </form>
       </div>
     </div>
+
+    {/* Tools Menu Bottom Sheet */}
+    <AnimatePresence>
+      {showToolMenu && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowToolMenu(false)}
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 rounded-t-[32px] border-t border-zinc-800 p-6 pb-10"
+          >
+            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-6" />
+
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">Herramientas</p>
+              <button
+                onClick={() => setShowToolMenu(false)}
+                className="p-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors"
+              >
+                <X size={14} className="text-zinc-400" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[
+                { icon: LayoutGrid, label: 'Panel', target: 'dashboard' },
+                { icon: Users, label: 'Clientes', target: 'clients' },
+                { icon: Clock, label: 'Pendientes', target: 'pendientes' },
+                { icon: Wallet, label: 'Gastos', target: 'gastos' },
+                { icon: CheckCircle2, label: 'Tareas', target: 'tareas' },
+                { icon: TrendingUp, label: 'Estadísticas', target: 'stats' },
+                { icon: Plus, label: 'Nuevo Pedido', target: 'new_invoice' },
+                { icon: Scan, label: 'Escanear', target: 'scan' },
+                { icon: Settings, label: 'Ajustes', target: 'settings' },
+              ].map((item) => (
+                <button
+                  key={item.target}
+                  onClick={() => { onNavigate?.(item.target); setShowToolMenu(false); }}
+                  className="flex flex-col items-center gap-2 p-4 bg-zinc-950 border border-zinc-800 rounded-2xl hover:border-orange-500/40 hover:bg-zinc-900 transition-all active:scale-95"
+                >
+                  <item.icon size={20} className="text-zinc-300" />
+                  <span className="text-[10px] font-black text-zinc-400 text-center leading-tight">{item.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="h-[1px] bg-zinc-800 mb-4" />
+
+            <button
+              onClick={() => { setShowToolMenu(false); setTimeout(clearChat, 200); }}
+              className="w-full flex items-center justify-center gap-3 p-4 bg-red-500/5 border border-red-500/20 text-red-500 rounded-2xl text-xs font-black hover:bg-red-500/10 transition-all active:scale-95"
+            >
+              <Trash2 size={16} /> Borrar conversación
+            </button>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
