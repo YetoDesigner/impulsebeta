@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "Invoice": {
+      "title": "Invoice",
+      "description": "A document representing a sale or quote.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "date": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "deliveryDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["PAGADO", "PENDIENTE", "ABONO"] },
+        "type": { "type": "string", "enum": ["FACTURA", "COTIZACIÓN"] },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "quantity": { "type": "number" },
+              "salePrice": { "type": "number" },
+              "costPrice": { "type": "number" }
+            }
+          }
+        },
+        "paidAmount": { "type": "number" },
+        "total": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "logoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "clientName", "date", "status", "type", "items", "total"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "User's invoices and quotes."
+    }
+  }
+}

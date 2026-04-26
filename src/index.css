@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+}
+
+@layer base {
+  :root {
+    /* DEFAULT TO LIGHT MODE */
+    --color-zinc-950: #f4f4f5; /* Light BG */
+    --color-zinc-900: #ffffff; /* Card BG */
+    --color-zinc-800: #e4e4e7; /* Borders */
+    --color-zinc-700: #d4d4d8;
+    --color-zinc-600: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-400: #52525b;
+    --color-zinc-200: #09090b; /* Inverted contrasts */
+    --color-zinc-100: #09090b; /* Text strong */
+    --color-white: #09090b; /* Inverted white */
+    --color-black: #ffffff; /* Inverted black */
+    color-scheme: light;
+  }
+
+  .dark {
+    --color-zinc-950: #09090b;
+    --color-zinc-900: #18181b;
+    --color-zinc-800: #27272a;
+    --color-zinc-700: #3f3f46;
+    --color-zinc-600: #52525b;
+    --color-zinc-500: #71717a;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-100: #f4f4f5;
+    --color-white: #ffffff;
+    --color-black: #000000;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans antialiased transition-colors duration-300;
+  }
+}
+
+/* Custom scrollbar for a cleaner app look */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+

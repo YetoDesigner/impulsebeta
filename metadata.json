@@ -1,0 +1,5 @@
+{
+  "name": "Impulse Ultra",
+  "description": "Sistema de facturación en la nube con autenticación de Google y gestión de clientes.",
+  "requestFramePermissions": []
+}
