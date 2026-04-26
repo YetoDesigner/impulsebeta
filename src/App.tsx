@@ -83,6 +83,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppView>('chat');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sharingInvoiceId, setSharingInvoiceId] = useState<string | null>(null);
   const sharingInvoiceRef = useRef<InvoiceCardRef>(null);
 
@@ -111,7 +112,6 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [globalDesignType, setGlobalDesignType] = useState<'MODERN' | 'TICKET'>('MODERN');
   const [isScanning, setIsScanning] = useState(false);
-  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [scannedExpense, setScannedExpense] = useState<Partial<Expense> | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -264,7 +264,6 @@ export default function App() {
     if (!file || !user) return;
 
     setIsScanning(true);
-    setIsFloatingMenuOpen(false);
     
     try {
       const reader = new FileReader();
@@ -775,23 +774,47 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col md:flex-row">
-      {/* Sidebar - Desktop Only */}
-      <aside className="hidden md:flex w-56 bg-zinc-900 border-r border-zinc-800 flex-col p-5 fixed h-full z-10">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden">
-            <img src={APP_LOGO_URL} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col md:flex-row overflow-x-hidden">
+      {/* Mobile Drawer Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar - Desktop & Mobile */}
+      <aside className={cn(
+        "w-64 md:w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col p-5 fixed h-full z-[110] transition-transform duration-300",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+              <img src={APP_LOGO_URL} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
+            <h1 className="text-lg font-black tracking-tighter text-white">
+              Impulse <span className="text-orange-500">Ultra</span>
+            </h1>
           </div>
-          <h1 className="text-lg font-black tracking-tighter text-white">
-            Impulse <span className="text-orange-500">Ultra</span>
-          </h1>
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden p-2 text-zinc-400 hover:text-white"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-4">
+        <nav className="flex-1 space-y-4 overflow-y-auto scrollbar-hide">
           <div className="space-y-1">
             <p className="text-[8px] font-black opacity-30 tracking-widest uppercase mb-3 px-3">Principal</p>
             <button 
-              onClick={() => setActiveTab('chat')}
+              onClick={() => { setActiveTab('chat'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'chat' 
@@ -802,7 +825,7 @@ export default function App() {
               <MessageSquare size={16} /> Impulse AI
             </button>
             <button 
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'dashboard' 
@@ -817,6 +840,7 @@ export default function App() {
                 if (checkInvoiceLimit()) {
                   setEditingInvoice(undefined);
                   setIsFormOpen(true);
+                  setIsMobileMenuOpen(false);
                 }
               }}
               className="w-full flex items-center gap-3 p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-xs font-black transition-all"
@@ -824,7 +848,18 @@ export default function App() {
               <Plus size={16} /> Nuevo Pedido
             </button>
             <button 
-              onClick={() => setActiveTab('clients')}
+              onClick={() => {
+                if (canUseScan()) {
+                  scanInputRef.current?.click();
+                  setIsMobileMenuOpen(false);
+                }
+              }}
+              className="w-full flex items-center gap-3 p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl text-xs font-black transition-all"
+            >
+              <Scan size={16} /> Escanear Factura
+            </button>
+            <button 
+              onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'clients' 
@@ -835,7 +870,7 @@ export default function App() {
               <UserIcon size={16} /> Clientes
             </button>
             <button 
-              onClick={() => setActiveTab('pendientes')}
+              onClick={() => { setActiveTab('pendientes'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'pendientes' 
@@ -846,7 +881,7 @@ export default function App() {
               <Clock size={16} /> Pendientes
             </button>
             <button 
-              onClick={() => setActiveTab('gastos')}
+              onClick={() => { setActiveTab('gastos'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'gastos' 
@@ -857,7 +892,7 @@ export default function App() {
               <Wallet size={16} /> Gastos
             </button>
             <button 
-              onClick={() => setActiveTab('tareas')}
+              onClick={() => { setActiveTab('tareas'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'tareas' 
@@ -868,7 +903,7 @@ export default function App() {
               <CheckCircle2 size={16} /> Tareas
             </button>
             <button 
-              onClick={() => setActiveTab('stats')}
+              onClick={() => { setActiveTab('stats'); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 activeTab === 'stats' 
@@ -879,7 +914,7 @@ export default function App() {
               <TrendingUp size={16} /> Estadísticas
             </button>
             <button 
-              onClick={() => setShowSettings(true)}
+              onClick={() => { setShowSettings(true); setIsMobileMenuOpen(false); }}
               className={cn(
                 "w-full flex items-center gap-3 p-2.5 rounded-xl text-xs font-black transition-all",
                 showSettings ? "bg-white text-black shadow-lg shadow-white/5" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
@@ -935,7 +970,13 @@ export default function App() {
         {/* Header Mobile */}
         <header className="md:hidden flex justify-between items-center mb-6 relative z-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-white active:scale-95 transition-transform"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden hidden sm:flex">
               <img src={APP_LOGO_URL} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
             <div>
@@ -1225,82 +1266,6 @@ export default function App() {
           />
         ) : null}
       </main>
-
-      {/* Floating Action Menu - Mobile Only */}
-      <div className="md:hidden fixed bottom-6 right-4 z-[50]">
-        <AnimatePresence>
-          {isFloatingMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="absolute bottom-20 right-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-3 shadow-2xl flex flex-col gap-2 min-w-[160px]"
-            >
-              {[ 
-                { id: 'chat',       icon: MessageSquare,    label: 'Impulse AI' }, 
-                { id: 'dashboard',  icon: LayoutGrid,       label: 'Panel' }, 
-                { id: 'scanner',    icon: Scan,             label: 'Escanear' }, 
-                { id: 'clients',    icon: UserIcon,         label: 'Clientes' }, 
-                { id: 'stats',      icon: TrendingUp,       label: 'Estadísticas' },
-                { id: 'pendientes', icon: Calendar,         label: 'Pendientes' }, 
-                { id: 'gastos',     icon: Wallet,           label: 'Gastos' }, 
-                { id: 'tareas',     icon: CheckCircle2,     label: 'Tareas' }, 
-                { id: 'settings',   icon: Settings,         label: 'Ajustes' } 
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setIsFloatingMenuOpen(false);
-                    if (item.id === 'settings') { 
-                      setShowSettings(true); 
-                    } else if (item.id === 'scanner') {
-                      if (canUseScan()) {
-                        scanInputRef.current?.click();
-                      }
-                    } else { 
-                      setShowSettings(false); 
-                      setActiveTab(item.id as AppView); 
-                    } 
-                  }}
-                  className={cn(
-                    "flex items-center gap-3 p-3 rounded-2xl text-sm font-black transition-all",
-                    (activeTab === item.id && !showSettings) || (item.id === 'settings' && showSettings)
-                      ? "bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white"
-                      : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white"
-                  )}
-                >
-                  <item.icon size={18} />
-                  {item.label}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex gap-3">
-          <button 
-            onClick={() => { 
-              if (checkInvoiceLimit()) {
-                setEditingInvoice(undefined); 
-                setIsFormOpen(true);
-              }
-            }} 
-            className="w-[56px] h-[56px] bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-95 transition-transform border border-zinc-200/50 dark:border-white/5" 
-          > 
-            <Plus size={24} strokeWidth={3} className="text-orange-500" /> 
-          </button> 
-          <button
-            onClick={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
-            className="w-[56px] h-[56px] bg-orange-500 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(249,115,22,0.3)] active:scale-95 transition-transform"
-          >
-            {isFloatingMenuOpen ? (
-              <X size={24} className="text-white" />
-            ) : (
-              <Menu size={24} className="text-white" />
-            )}
-          </button>
-        </div>
-      </div> 
 
       {/* Global Scanning Overlay */}
       <AnimatePresence>
